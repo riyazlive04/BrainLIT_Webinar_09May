@@ -139,6 +139,87 @@ tbody td a:hover { text-decoration: underline; }
 .row-del:hover { background: rgba(220,53,69,.10); color: #dc3545; }
 .row-del:disabled { opacity: .5; cursor: not-allowed; }
 .row-del svg { display: block; }
+
+/* attendance + language inline controls */
+.row-lang {
+  padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 8px;
+  background: #fff; font-size: 13px; cursor: pointer;
+}
+.row-lang:focus { outline: 0; border-color: var(--indigo); }
+.row-att {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border: 1.5px solid var(--line); border-radius: 999px;
+  background: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
+  color: var(--muted); transition: all .15s;
+  white-space: nowrap;
+}
+.row-att:hover { border-color: var(--indigo); color: var(--ink); }
+.row-att.is-attended {
+  background: rgba(45,191,102,.12); border-color: rgba(45,191,102,.4); color: #1a8045;
+}
+.row-att .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+/* templates editor */
+.tpl-grid { display: grid; gap: 14px; }
+.tpl-card {
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  background: #fff; padding: 16px;
+}
+.tpl-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 10px; flex-wrap: wrap;
+}
+.tpl-stage { font-weight: 700; font-size: 14px; color: var(--ink); }
+.tpl-stage .meta { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 6px; }
+.tpl-lang-pill {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(74,79,191,.10); color: var(--indigo); font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.tpl-actions { display: flex; gap: 8px; }
+.tpl-body {
+  width: 100%; min-height: 100px;
+  padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px;
+  background: var(--cream-warm); font-family: inherit; font-size: 13.5px;
+  line-height: 1.5; color: var(--ink); resize: vertical;
+}
+.tpl-body:focus { outline: 0; border-color: var(--indigo); background: #fff; }
+.tpl-vars {
+  margin-top: 8px; font-size: 11.5px; color: var(--muted); font-family: ui-monospace, monospace;
+}
+.tpl-vars code {
+  background: var(--cream-warm); padding: 1px 6px; border-radius: 4px;
+  margin-right: 4px; color: var(--indigo);
+}
+
+/* scheduled messages */
+.sched-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.sched-tools select, .sched-tools input {
+  padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff;
+}
+.sched-tools .grow { flex: 1; min-width: 200px; }
+.status-pill {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.status-pending    { background: rgba(245,194,62,.20);  color: #946a00; }
+.status-processing { background: rgba(107,167,224,.20); color: #2a5e8e; }
+.status-sent       { background: rgba(45,191,102,.20);  color: #1a8045; }
+.status-failed     { background: rgba(220,53,69,.15);   color: #b22b3a; }
+.status-cancelled  { background: rgba(27,22,38,.10);    color: var(--muted); }
+.sched-error {
+  display: block; font-size: 12px; color: #b22b3a;
+  font-family: ui-monospace, monospace;
+  max-width: 300px; word-break: break-word; margin-top: 4px;
+}
+.row-retry {
+  background: transparent; border: 0; cursor: pointer;
+  padding: 4px 8px; border-radius: 6px; color: var(--indigo);
+  font-size: 12px; font-weight: 600;
+}
+.row-retry:hover { background: rgba(74,79,191,.10); }
+.row-retry:disabled { opacity: .5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -210,8 +291,49 @@ tbody td a:hover { text-decoration: underline; }
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Parent</th><th>WhatsApp</th><th>Webinar date</th><th>Registered</th><th class="col-act"></th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+        <thead><tr><th>Parent</th><th>WhatsApp</th><th>Webinar date</th><th>Registered</th><th>Lang</th><th>Attended</th><th class="col-act"></th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card regs-card">
+    <h2>Message templates</h2>
+    <p class="s">Edit the WhatsApp copy sent at each stage. Saves instantly. Variables in <code>{{double braces}}</code> are auto-substituted.</p>
+    <div id="tplGrid" class="tpl-grid"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="card regs-card">
+    <h2>Scheduled messages</h2>
+    <p class="s">Audit log of every WhatsApp queued, sent, or failed. Refreshes when you reload.</p>
+    <div class="sched-tools">
+      <select id="schedStatus">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="sent">Sent</option>
+        <option value="failed">Failed</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="processing">Processing</option>
+      </select>
+      <select id="schedStage">
+        <option value="">All stages</option>
+        <option value="registration">registration</option>
+        <option value="reminder_72h">reminder_72h</option>
+        <option value="reminder_48h">reminder_48h</option>
+        <option value="reminder_24h">reminder_24h</option>
+        <option value="reminder_6h">reminder_6h</option>
+        <option value="reminder_15m">reminder_15m</option>
+        <option value="reminder_5m">reminder_5m</option>
+        <option value="post_miss_1h">post_miss_1h</option>
+        <option value="post_miss_6h">post_miss_6h</option>
+      </select>
+      <input type="search" id="schedSearch" class="grow" placeholder="Search by parent name or email…">
+      <button class="btn ghost" id="schedRefresh">Refresh</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Parent</th><th>Stage</th><th>Send at</th><th>Status</th><th>Sent at</th><th class="col-act"></th></tr></thead>
+        <tbody id="schedBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -269,10 +391,10 @@ tbody td a:hover { text-decoration: underline; }
   async function boot() {
     if (!sb) {
       toast('settingsToast', 'Supabase not configured. Paste anon key in admin.html.', false);
-      document.getElementById('tbody').innerHTML = '<tr><td colspan="5" class="empty">Add your Supabase anon key to admin.html.</td></tr>';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty">Add your Supabase anon key to admin.html.</td></tr>';
       return;
     }
-    await Promise.all([loadSettings(), loadRegistrations()]);
+    await Promise.all([loadSettings(), loadRegistrations(), loadTemplates(), loadScheduled()]);
   }
 
   // ---- Settings ----
@@ -350,11 +472,11 @@ tbody td a:hover { text-decoration: underline; }
 
   async function loadRegistrations() {
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
     const { data, error } = await sb.from('registrations')
       .select('*').order('registered_at', { ascending: false }).limit(500);
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="5" class="empty">Error: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="empty">Error: ${error.message}</td></tr>`;
       return;
     }
     allRegs = data || [];
@@ -395,7 +517,7 @@ tbody td a:hover { text-decoration: underline; }
     document.getElementById('statRegs').textContent = rows.length;
     const tbody = document.getElementById('tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No registrations match your filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No registrations match your filters.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(r => {
@@ -404,11 +526,24 @@ tbody td a:hover { text-decoration: underline; }
       const waUrl = `https://wa.me/${wa}`;
       const dt = new Date(r.webinar_date).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
       const reg = new Date(r.registered_at).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
-      return `<tr>
+      const lang = r.language || 'en';
+      const attended = r.attended === true;
+      return `<tr data-row-id="${r.id}">
         <td><div class="pn">${esc(r.parent_name || '')}</div><div class="em">${esc(r.email || '')}</div></td>
         <td><a href="${waUrl}" target="_blank" rel="noopener">${ph}</a></td>
         <td>${dt}</td>
         <td>${reg}</td>
+        <td>
+          <select class="row-lang" data-id="${r.id}" title="Message language">
+            <option value="en" ${lang==='en'?'selected':''}>EN</option>
+            <option value="ta" ${lang==='ta'?'selected':''}>TA</option>
+          </select>
+        </td>
+        <td>
+          <button type="button" class="row-att ${attended?'is-attended':''}" data-id="${r.id}" data-attended="${attended}" title="Toggle attendance">
+            <span class="dot"></span>${attended ? 'Attended' : 'Mark attended'}
+          </button>
+        </td>
         <td class="col-act">
           <button type="button" class="row-del" data-id="${r.id}" data-name="${esc(r.parent_name || '')}" title="Delete registration" aria-label="Delete registration">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
@@ -419,23 +554,51 @@ tbody td a:hover { text-decoration: underline; }
   }
 
   document.getElementById('tbody').addEventListener('click', async (e) => {
-    const btn = e.target.closest('.row-del');
-    if (!btn) return;
-    const id = btn.dataset.id;
-    const name = btn.dataset.name || 'this registration';
-    if (!id) return;
-    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
-    btn.disabled = true;
-    const { error } = await sb.from('registrations').delete().eq('id', id);
-    if (error) {
-      btn.disabled = false;
-      alert('Delete failed: ' + error.message);
+    // Delete
+    const delBtn = e.target.closest('.row-del');
+    if (delBtn) {
+      const id = delBtn.dataset.id;
+      const name = delBtn.dataset.name || 'this registration';
+      if (!id) return;
+      if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+      delBtn.disabled = true;
+      const { error } = await sb.from('registrations').delete().eq('id', id);
+      if (error) { delBtn.disabled = false; alert('Delete failed: ' + error.message); return; }
+      allRegs = allRegs.filter(r => String(r.id) !== String(id));
+      document.getElementById('statTotal').textContent = allRegs.length;
+      rebuildDateFilter();
+      renderRegs();
       return;
     }
-    allRegs = allRegs.filter(r => String(r.id) !== String(id));
-    document.getElementById('statTotal').textContent = allRegs.length;
-    rebuildDateFilter();
-    renderRegs();
+    // Attendance toggle
+    const attBtn = e.target.closest('.row-att');
+    if (attBtn) {
+      const id = attBtn.dataset.id;
+      const wasAttended = attBtn.dataset.attended === 'true';
+      const newVal = !wasAttended;
+      attBtn.disabled = true;
+      const { error } = await sb.from('registrations').update({ attended: newVal }).eq('id', id);
+      attBtn.disabled = false;
+      if (error) { alert('Update failed: ' + error.message); return; }
+      const reg = allRegs.find(r => String(r.id) === String(id));
+      if (reg) reg.attended = newVal;
+      renderRegs();
+      return;
+    }
+  });
+
+  // Language change (dropdowns fire 'change', not 'click')
+  document.getElementById('tbody').addEventListener('change', async (e) => {
+    const sel = e.target.closest('.row-lang');
+    if (!sel) return;
+    const id = sel.dataset.id;
+    const lang = sel.value;
+    sel.disabled = true;
+    const { error } = await sb.from('registrations').update({ language: lang }).eq('id', id);
+    sel.disabled = false;
+    if (error) { alert('Update failed: ' + error.message); return; }
+    const reg = allRegs.find(r => String(r.id) === String(id));
+    if (reg) reg.language = lang;
   });
 
   document.getElementById('exportBtn').addEventListener('click', () => {
@@ -458,6 +621,188 @@ tbody td a:hover { text-decoration: underline; }
     const s = String(v).replace(/"/g, '""');
     return /[",\n]/.test(s) ? `"${s}"` : s;
   }
+
+  // ============== MESSAGE TEMPLATES ==============
+  const STAGE_LABELS = {
+    registration:  'Registration confirmation',
+    reminder_72h:  '72 hour reminder',
+    reminder_48h:  '48 hour reminder',
+    reminder_24h:  '24 hour reminder',
+    reminder_6h:   '6 hour reminder',
+    reminder_15m:  '15 minute reminder',
+    reminder_5m:   '5 minute reminder',
+    post_miss_1h:  'Post-webinar (1 hour after)',
+    post_miss_6h:  'Post-webinar (6 hours after)'
+  };
+  const STAGE_ORDER = Object.keys(STAGE_LABELS);
+  const LANG_LABELS = { en: 'English', ta: 'Tamil' };
+
+  let allTemplates = [];
+
+  async function loadTemplates() {
+    const grid = document.getElementById('tplGrid');
+    grid.innerHTML = '<div class="empty">Loading…</div>';
+    const { data, error } = await sb.from('message_templates')
+      .select('*').order('stage').order('language');
+    if (error) {
+      grid.innerHTML = `<div class="empty">Error: ${esc(error.message)}</div>`;
+      return;
+    }
+    allTemplates = data || [];
+    renderTemplates();
+  }
+
+  function renderTemplates() {
+    const grid = document.getElementById('tplGrid');
+    if (!allTemplates.length) {
+      grid.innerHTML = '<div class="empty">No templates yet. Run the Phase 1 SQL to seed them.</div>';
+      return;
+    }
+    // Sort by stage order, then language
+    const sorted = [...allTemplates].sort((a, b) => {
+      const sa = STAGE_ORDER.indexOf(a.stage), sb_ = STAGE_ORDER.indexOf(b.stage);
+      if (sa !== sb_) return sa - sb_;
+      return a.language.localeCompare(b.language);
+    });
+    grid.innerHTML = sorted.map(t => `
+      <div class="tpl-card" data-tpl-id="${t.id}">
+        <div class="tpl-head">
+          <div class="tpl-stage">
+            ${esc(STAGE_LABELS[t.stage] || t.stage)}
+            <span class="meta">${esc(t.stage)}</span>
+            <span class="tpl-lang-pill">${esc(LANG_LABELS[t.language] || t.language)}</span>
+          </div>
+          <div class="tpl-actions">
+            <button class="btn ghost tpl-save" data-id="${t.id}" disabled>Save</button>
+          </div>
+        </div>
+        <textarea class="tpl-body" data-id="${t.id}" rows="6">${esc(t.body)}</textarea>
+        <div class="tpl-vars">Variables:
+          <code>{{parent_name}}</code>
+          <code>{{webinar_date_local}}</code>
+          <code>{{webinar_time_local}}</code>
+          <code>{{meeting_link}}</code>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Enable Save button when textarea is edited
+  document.getElementById('tplGrid').addEventListener('input', (e) => {
+    const ta = e.target.closest('.tpl-body');
+    if (!ta) return;
+    const card = ta.closest('.tpl-card');
+    const saveBtn = card.querySelector('.tpl-save');
+    const original = allTemplates.find(t => String(t.id) === String(ta.dataset.id))?.body ?? '';
+    saveBtn.disabled = ta.value === original;
+  });
+
+  // Save template on click
+  document.getElementById('tplGrid').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.tpl-save');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const ta = document.querySelector(`.tpl-body[data-id="${id}"]`);
+    if (!ta) return;
+    const newBody = ta.value;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    const { error } = await sb.from('message_templates')
+      .update({ body: newBody, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+      alert('Save failed: ' + error.message);
+      return;
+    }
+    const tpl = allTemplates.find(t => String(t.id) === String(id));
+    if (tpl) tpl.body = newBody;
+    btn.textContent = '✓ Saved';
+    setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+  });
+
+  // ============== SCHEDULED MESSAGES ==============
+  let allScheduled = [];
+
+  document.getElementById('schedRefresh').addEventListener('click', loadScheduled);
+  document.getElementById('schedStatus').addEventListener('change', renderScheduled);
+  document.getElementById('schedStage').addEventListener('change', renderScheduled);
+  document.getElementById('schedSearch').addEventListener('input', renderScheduled);
+
+  async function loadScheduled() {
+    const tbody = document.getElementById('schedBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Loading…</td></tr>';
+    const { data, error } = await sb.from('scheduled_messages')
+      .select('id, stage, send_at, sent_at, status, attempts, error, registration_id')
+      .order('send_at', { ascending: false }).limit(500);
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">Error: ${esc(error.message)}</td></tr>`;
+      return;
+    }
+    allScheduled = data || [];
+    renderScheduled();
+  }
+
+  function renderScheduled() {
+    const tbody = document.getElementById('schedBody');
+    const status = document.getElementById('schedStatus').value;
+    const stage = document.getElementById('schedStage').value;
+    const q = document.getElementById('schedSearch').value.trim().toLowerCase();
+    const regsById = new Map(allRegs.map(r => [String(r.id), r]));
+
+    let rows = allScheduled;
+    if (status) rows = rows.filter(m => m.status === status);
+    if (stage)  rows = rows.filter(m => m.stage === stage);
+    if (q) {
+      rows = rows.filter(m => {
+        const reg = regsById.get(String(m.registration_id));
+        if (!reg) return false;
+        return (reg.parent_name || '').toLowerCase().includes(q)
+            || (reg.email || '').toLowerCase().includes(q);
+      });
+    }
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No messages match your filters.</td></tr>';
+      return;
+    }
+    const fmt = (iso) => iso ? new Date(iso).toLocaleString('en-IN', {
+      day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata'
+    }) : '—';
+    tbody.innerHTML = rows.slice(0, 200).map(m => {
+      const reg = regsById.get(String(m.registration_id));
+      const who = reg
+        ? `<div class="pn">${esc(reg.parent_name || '')}</div><div class="em">${esc(reg.email || '')}</div>`
+        : `<div class="em">(deleted #${esc(String(m.registration_id).slice(0,8))})</div>`;
+      const errLine = m.error ? `<span class="sched-error">${esc(m.error)}</span>` : '';
+      const retryBtn = (m.status === 'failed')
+        ? `<button class="row-retry" data-id="${m.id}">Retry</button>`
+        : '';
+      return `<tr>
+        <td>${who}</td>
+        <td><code style="font-size:12px">${esc(m.stage)}</code></td>
+        <td>${fmt(m.send_at)}</td>
+        <td><span class="status-pill status-${esc(m.status)}">${esc(m.status)}</span> ${m.attempts ? `<span class="em">×${m.attempts}</span>` : ''}${errLine}</td>
+        <td>${fmt(m.sent_at)}</td>
+        <td class="col-act">${retryBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Retry: reset to pending so next cron tick picks it up
+  document.getElementById('schedBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.row-retry');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    btn.disabled = true;
+    const { error } = await sb.from('scheduled_messages')
+      .update({ status: 'pending', error: null, attempts: 0 }).eq('id', id);
+    if (error) { btn.disabled = false; alert('Retry failed: ' + error.message); return; }
+    const m = allScheduled.find(x => String(x.id) === String(id));
+    if (m) { m.status = 'pending'; m.error = null; m.attempts = 0; }
+    renderScheduled();
+  });
   function esc(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function toast(id, msg, ok) {
     const t = document.getElementById(id);
