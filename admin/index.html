@@ -329,8 +329,8 @@ tbody td a:hover { text-decoration: underline; }
         <option value="reminder_6h">reminder_6h</option>
         <option value="reminder_15m">reminder_15m</option>
         <option value="reminder_5m">reminder_5m</option>
-        <option value="post_miss_1h">post_miss_1h</option>
-        <option value="post_miss_6h">post_miss_6h</option>
+        <option value="post_attended">post_attended</option>
+        <option value="post_miss">post_miss</option>
       </select>
       <input type="search" id="schedSearch" class="grow" placeholder="Search by parent name or email…">
       <button class="btn ghost" id="schedRefresh">Refresh</button>
@@ -641,15 +641,15 @@ tbody td a:hover { text-decoration: underline; }
 
   // ============== MESSAGE TEMPLATES ==============
   const STAGE_LABELS = {
-    registration:  'Registration confirmation',
-    reminder_72h:  '72 hour reminder',
-    reminder_48h:  '48 hour reminder',
-    reminder_24h:  '24 hour reminder',
-    reminder_6h:   '6 hour reminder',
-    reminder_15m:  '15 minute reminder',
-    reminder_5m:   '5 minute reminder',
-    post_miss_1h:  'Post-webinar (1 hour after)',
-    post_miss_6h:  'Post-webinar (6 hours after)'
+    registration:   'Registration confirmation',
+    reminder_72h:   '72 hour reminder',
+    reminder_48h:   '48 hour reminder',
+    reminder_24h:   '24 hour reminder',
+    reminder_6h:    '6 hour reminder',
+    reminder_15m:   '15 minute reminder',
+    reminder_5m:    '5 minute reminder',
+    post_attended:  'Post-webinar — attended (sent on admin click)',
+    post_miss:      'Post-webinar — missed (sent on admin click)'
   };
   const STAGE_ORDER = Object.keys(STAGE_LABELS);
   const LANG_LABELS = { en: 'English', ta: 'Tamil' };

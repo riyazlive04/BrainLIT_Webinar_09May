@@ -6,10 +6,10 @@
 //   EVOLUTION_API_URL, EVOLUTION_INSTANCE, EVOLUTION_API_KEY
 // (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-provided.)
 //
-// Attendance behaviour (post_miss_* stages):
-//   reg.attended === true   → cancelled (parent showed up)
-//   reg.attended === null   → cancelled (admin hasn't marked yet — opt-in)
-//   reg.attended === false  → SEND (admin explicitly marked them as missed)
+// Attendance-gated stages (queued by trigger when admin clicks Attended/Missed):
+//   post_attended  → sends only if reg.attended === true  (defensive re-check)
+//   post_miss      → sends only if reg.attended === false (defensive re-check)
+// If admin un-marks before the cron tick, the trigger cancels the row.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -49,7 +49,7 @@ Deno.serve(async (_req) => {
   let sent = 0, failed = 0, cancelled = 0
 
   for (const msg of claimed as any[]) {
-    const reg = regMap.get(msg.registration_id)
+    const reg = regMap.get(msg.registration_id) as any
     const finalize = (patch: Record<string, unknown>) =>
       supabase.from('scheduled_messages').update(patch).eq('id', msg.id)
 
@@ -58,14 +58,13 @@ Deno.serve(async (_req) => {
       failed++; continue
     }
 
-    // Post-miss messages: opt-in. ONLY send if admin explicitly marked attended === false.
-    // attended === true (came)  → cancel
-    // attended === null (unset) → cancel (admin hasn't decided)
-    if (msg.stage.startsWith('post_miss_') && reg.attended !== false) {
-      const skipReason = reg.attended === true
-        ? 'Parent attended; skipped'
-        : 'Not marked as missed; skipped'
-      await finalize({ status: 'cancelled', sent_at: new Date().toISOString(), error: skipReason })
+    // Defensive re-check at send time (in case admin changed attendance between trigger and cron tick)
+    if (msg.stage === 'post_attended' && reg.attended !== true) {
+      await finalize({ status: 'cancelled', sent_at: new Date().toISOString(), error: 'Attendance no longer true; skipped' })
+      cancelled++; continue
+    }
+    if (msg.stage === 'post_miss' && reg.attended !== false) {
+      await finalize({ status: 'cancelled', sent_at: new Date().toISOString(), error: 'Attendance no longer false; skipped' })
       cancelled++; continue
     }
 
