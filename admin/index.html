@@ -146,18 +146,23 @@ tbody td a:hover { text-decoration: underline; }
   background: #fff; font-size: 13px; cursor: pointer;
 }
 .row-lang:focus { outline: 0; border-color: var(--indigo); }
-.row-att {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; border: 1.5px solid var(--line); border-radius: 999px;
+.att-pair { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.row-att, .row-unatt {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px; border: 1.5px solid var(--line); border-radius: 999px;
   background: #fff; font-size: 12px; font-weight: 600; cursor: pointer;
   color: var(--muted); transition: all .15s;
   white-space: nowrap;
 }
-.row-att:hover { border-color: var(--indigo); color: var(--ink); }
-.row-att.is-attended {
-  background: rgba(45,191,102,.12); border-color: rgba(45,191,102,.4); color: #1a8045;
+.row-att:hover  { border-color: rgba(45,191,102,.5); color: #1a8045; }
+.row-unatt:hover { border-color: rgba(220,53,69,.5); color: #b22b3a; }
+.row-att.is-active {
+  background: rgba(45,191,102,.12); border-color: rgba(45,191,102,.5); color: #1a8045;
 }
-.row-att .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+.row-unatt.is-active {
+  background: rgba(220,53,69,.10); border-color: rgba(220,53,69,.45); color: #b22b3a;
+}
+.row-att .dot, .row-unatt .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
 
 /* templates editor */
 .tpl-grid { display: grid; gap: 14px; }
@@ -527,7 +532,6 @@ tbody td a:hover { text-decoration: underline; }
       const dt = new Date(r.webinar_date).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
       const reg = new Date(r.registered_at).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
       const lang = r.language || 'en';
-      const attended = r.attended === true;
       const age = r.child_age != null ? String(r.child_age) : '<span class="em">—</span>';
       const reasonMap = { ai_literacy: 'AI Literacy', future_readiness_with_ai: 'Future Readiness with AI', just_exploring: 'Just exploring' };
       const reasonLabel = r.reason ? esc(reasonMap[r.reason] || r.reason) : '<span class="em">—</span>';
@@ -545,9 +549,14 @@ tbody td a:hover { text-decoration: underline; }
           </select>
         </td>
         <td>
-          <button type="button" class="row-att ${attended?'is-attended':''}" data-id="${r.id}" data-attended="${attended}" title="Toggle attendance">
-            <span class="dot"></span>${attended ? 'Attended' : 'Mark attended'}
-          </button>
+          <div class="att-pair">
+            <button type="button" class="row-att ${r.attended === true ? 'is-active' : ''}" data-id="${r.id}" data-action="attended" title="Mark attended">
+              <span class="dot"></span>${r.attended === true ? 'Attended' : 'Attended'}
+            </button>
+            <button type="button" class="row-unatt ${r.attended === false ? 'is-active' : ''}" data-id="${r.id}" data-action="unattended" title="Mark unattended (sends post-webinar follow-ups)">
+              <span class="dot"></span>${r.attended === false ? 'Missed' : 'Missed'}
+            </button>
+          </div>
         </td>
         <td class="col-act">
           <button type="button" class="row-del" data-id="${r.id}" data-name="${esc(r.parent_name || '')}" title="Delete registration" aria-label="Delete registration">
@@ -575,17 +584,20 @@ tbody td a:hover { text-decoration: underline; }
       renderRegs();
       return;
     }
-    // Attendance toggle
-    const attBtn = e.target.closest('.row-att');
+    // Attendance toggle (two buttons: Attended / Missed; click again clears to NULL)
+    const attBtn = e.target.closest('.row-att, .row-unatt');
     if (attBtn) {
       const id = attBtn.dataset.id;
-      const wasAttended = attBtn.dataset.attended === 'true';
-      const newVal = !wasAttended;
+      const action = attBtn.dataset.action; // 'attended' | 'unattended'
+      const reg = allRegs.find(r => String(r.id) === String(id));
+      const current = reg?.attended;
+      let newVal;
+      if (action === 'attended')        newVal = (current === true)  ? null : true;
+      else /* action === 'unattended' */ newVal = (current === false) ? null : false;
       attBtn.disabled = true;
       const { error } = await sb.from('registrations').update({ attended: newVal }).eq('id', id);
       attBtn.disabled = false;
       if (error) { alert('Update failed: ' + error.message); return; }
-      const reg = allRegs.find(r => String(r.id) === String(id));
       if (reg) reg.attended = newVal;
       renderRegs();
       return;
