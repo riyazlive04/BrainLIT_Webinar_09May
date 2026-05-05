@@ -291,8 +291,8 @@ tbody td a:hover { text-decoration: underline; }
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Parent</th><th>WhatsApp</th><th>Webinar date</th><th>Registered</th><th>Lang</th><th>Attended</th><th class="col-act"></th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+        <thead><tr><th>Parent</th><th>WhatsApp</th><th>Webinar date</th><th>Registered</th><th>Age</th><th>Reason</th><th>Lang</th><th>Attended</th><th class="col-act"></th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -391,7 +391,7 @@ tbody td a:hover { text-decoration: underline; }
   async function boot() {
     if (!sb) {
       toast('settingsToast', 'Supabase not configured. Paste anon key in admin.html.', false);
-      document.getElementById('tbody').innerHTML = '<tr><td colspan="7" class="empty">Add your Supabase anon key to admin.html.</td></tr>';
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="empty">Add your Supabase anon key to admin.html.</td></tr>';
       return;
     }
     await Promise.all([loadSettings(), loadRegistrations(), loadTemplates(), loadScheduled()]);
@@ -472,11 +472,11 @@ tbody td a:hover { text-decoration: underline; }
 
   async function loadRegistrations() {
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Loading…</td></tr>';
     const { data, error } = await sb.from('registrations')
       .select('*').order('registered_at', { ascending: false }).limit(500);
     if (error) {
-      tbody.innerHTML = `<tr><td colspan="7" class="empty">Error: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="empty">Error: ${error.message}</td></tr>`;
       return;
     }
     allRegs = data || [];
@@ -517,7 +517,7 @@ tbody td a:hover { text-decoration: underline; }
     document.getElementById('statRegs').textContent = rows.length;
     const tbody = document.getElementById('tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty">No registrations match your filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No registrations match your filters.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(r => {
@@ -528,11 +528,16 @@ tbody td a:hover { text-decoration: underline; }
       const reg = new Date(r.registered_at).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' });
       const lang = r.language || 'en';
       const attended = r.attended === true;
+      const age = r.child_age != null ? String(r.child_age) : '<span class="em">—</span>';
+      const reasonMap = { ai_literacy: 'AI Literacy', future_readiness_with_ai: 'Future Readiness with AI', just_exploring: 'Just exploring' };
+      const reasonLabel = r.reason ? esc(reasonMap[r.reason] || r.reason) : '<span class="em">—</span>';
       return `<tr data-row-id="${r.id}">
         <td><div class="pn">${esc(r.parent_name || '')}</div><div class="em">${esc(r.email || '')}</div></td>
         <td><a href="${waUrl}" target="_blank" rel="noopener">${ph}</a></td>
         <td>${dt}</td>
         <td>${reg}</td>
+        <td>${age}</td>
+        <td>${reasonLabel}</td>
         <td>
           <select class="row-lang" data-id="${r.id}" title="Message language">
             <option value="en" ${lang==='en'?'selected':''}>EN</option>
@@ -604,7 +609,7 @@ tbody td a:hover { text-decoration: underline; }
   document.getElementById('exportBtn').addEventListener('click', () => {
     const rows = getFiltered();
     if (!rows.length) return alert('Nothing to export.');
-    const headers = ['parent_name','email','whatsapp','location','webinar_date','meeting_link','registered_at'];
+    const headers = ['parent_name','email','whatsapp','location','child_age','reason','language','attended','webinar_date','meeting_link','registered_at'];
     const csv = [headers.join(',')].concat(
       rows.map(r => headers.map(h => csvCell(r[h])).join(','))
     ).join('\n');

@@ -349,15 +349,28 @@ h2.big .underline::after {
   animation: live 1.8s infinite;
 }
 form.reg-form { display: grid; gap: 14px; margin-top: 22px; }
+.field-row { display: grid; gap: 14px; }
+.field-row.split-7-3 { grid-template-columns: 7fr 3fr; }
+.field-row.split-1-1 { grid-template-columns: 1fr 1fr; }
+@media (max-width: 540px) {
+  .field-row.split-7-3, .field-row.split-1-1 { grid-template-columns: 1fr; }
+}
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
-.field input {
+.field input, .field select {
   font: inherit; font-size: 16px;
   padding: 14px 16px; border: 1.5px solid var(--ink-15);
   border-radius: 11px; background: #fff; color: var(--ink);
   transition: border-color .2s, box-shadow .2s;
 }
-.field input:focus { outline: 0; border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(74,79,191,.18); }
+.field input:focus, .field select:focus { outline: 0; border-color: var(--accent-red); box-shadow: 0 0 0 3px rgba(74,79,191,.18); }
+.field select { background: #fff; cursor: pointer; -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231B1626' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+}
+.field input[type="number"] { -moz-appearance: textfield; }
+.field input[type="number"]::-webkit-outer-spin-button,
+.field input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .phone-wrap { display: flex; align-items: stretch; gap: 0; }
 .phone-wrap .pfx {
   display: inline-flex; align-items: center;
@@ -698,7 +711,8 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
 
 /* ====== FIELD VALID FEEDBACK ====== */
 .reg-form .field { position: relative; }
-.reg-form .field.is-valid input { border-color: #2dbf66; box-shadow: 0 0 0 2px rgba(45,191,102,.12); }
+.reg-form .field.is-valid input,
+.reg-form .field.is-valid select { border-color: #2dbf66; box-shadow: 0 0 0 2px rgba(45,191,102,.12); }
 .reg-form .field.is-valid .phone-wrap .pfx { border-color: #2dbf66; }
 .reg-form .field.is-valid::after {
   content: ""; position: absolute; right: 14px; bottom: 14px;
@@ -953,17 +967,34 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
         <h3>Reserve my free seat</h3>
         <p class="seats" id="seats-r"><span class="pulse"></span><span>Loading seats…</span></p>
         <form class="reg-form" id="regForm" novalidate>
-          <div class="field">
-            <label for="parent_name">Parent's Name</label>
-            <input type="text" id="parent_name" name="parent_name" autocomplete="name" required placeholder="Haja Najmudeen">
+          <div class="field-row split-7-3">
+            <div class="field">
+              <label for="parent_name">Parent's Name</label>
+              <input type="text" id="parent_name" name="parent_name" autocomplete="name" required placeholder="Haja Najmudeen">
+            </div>
+            <div class="field">
+              <label for="child_age">Child's Age</label>
+              <input type="number" id="child_age" name="child_age" inputmode="numeric" min="4" max="17" required placeholder="10">
+            </div>
+          </div>
+          <div class="field-row split-1-1">
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label for="location">Location</label>
+              <input type="text" id="location" name="location" autocomplete="address-level2" required placeholder="Chennai, Tamil Nadu">
+            </div>
           </div>
           <div class="field">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" autocomplete="email" required placeholder="you@example.com">
-          </div>
-          <div class="field">
-            <label for="location">Location</label>
-            <input type="text" id="location" name="location" autocomplete="address-level2" required placeholder="Chennai, Tamil Nadu">
+            <label for="reason">Why are you registering for this webinar?</label>
+            <select id="reason" name="reason" required>
+              <option value="" disabled selected>Choose one…</option>
+              <option value="ai_literacy">AI Literacy</option>
+              <option value="future_readiness_with_ai">Future Readiness with AI</option>
+              <option value="just_exploring">Just Exploring</option>
+            </select>
           </div>
           <div class="field">
             <label for="whatsapp">WhatsApp number</label>
@@ -974,8 +1005,8 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
           </div>
           <div class="field-error" id="formError" style="display:none"></div>
           <div class="reg-progress" id="regProgress" aria-live="polite">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            <span class="reg-progress-text">Fill in 4 details to reserve</span>
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="reg-progress-text">Fill in 6 details to reserve</span>
           </div>
           <button type="submit" class="reg-submit" id="regSubmit">
             <span>Reserve my seat , it's free</span>
@@ -1135,11 +1166,16 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
     const parent_name = fd.get('parent_name')?.toString().trim();
     const email = fd.get('email')?.toString().trim();
     const location = fd.get('location')?.toString().trim();
+    const childAgeRaw = fd.get('child_age')?.toString().trim();
+    const child_age = childAgeRaw ? Number(childAgeRaw) : NaN;
+    const reason = fd.get('reason')?.toString().trim();
     const wa = fd.get('whatsapp')?.toString().replace(/\D/g,'');
 
     if (!parent_name || parent_name.length < 2) return showErr("Please enter the parent's name.", 'parent_name');
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return showErr('Please enter a valid email.', 'email');
     if (!location || location.length < 2) return showErr('Please enter your location.', 'location');
+    if (!Number.isInteger(child_age) || child_age < 4 || child_age > 17) return showErr("Please enter your child's age (4–17).", 'child_age');
+    if (!reason) return showErr('Please tell us why you are registering.', 'reason');
     if (!wa || wa.length !== 10) return showErr(`Please enter a 10-digit WhatsApp number (you've typed ${wa?.length || 0}).`, 'whatsapp');
 
     if (!sb) return showErr('Configuration missing , add the Supabase anon key.');
@@ -1166,6 +1202,8 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
       parent_name,
       email: emailNorm,
       location,
+      child_age,
+      reason,
       whatsapp: whatsappNum,
       webinar_date: webinarIso,
       meeting_link: meetingLink || ''
@@ -1204,11 +1242,13 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
   }
 
   // ==================== FIELD VALIDATION + PROGRESS ====================
-  const FIELDS = ['parent_name', 'email', 'location', 'whatsapp'];
+  const FIELDS = ['parent_name', 'email', 'location', 'child_age', 'reason', 'whatsapp'];
   const validators = {
     parent_name: (v) => v.trim().length >= 2,
     email:       (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim()),
     location:    (v) => v.trim().length >= 2,
+    child_age:   (v) => { const n = Number(v); return Number.isInteger(n) && n >= 4 && n <= 17; },
+    reason:      (v) => v.trim().length > 0,
     whatsapp:    (v) => v.replace(/\D/g,'').length === 10,
   };
   function validateField(id) {
@@ -1221,22 +1261,24 @@ h1.hero-title.in-hero { opacity: 1; transform: none; }
     return ok;
   }
   function updateProgress() {
+    const total = FIELDS.length;
     const valid = FIELDS.filter(id => document.getElementById(id)?.closest('.field')?.classList.contains('is-valid')).length;
     const dots = document.querySelectorAll('.reg-progress .dot');
     dots.forEach((d, i) => d.classList.toggle('on', i < valid));
     const txt = document.querySelector('.reg-progress-text');
     if (txt) {
-      if (valid === 0)      txt.textContent = 'Fill in 4 details to reserve';
-      else if (valid < 4)   txt.textContent = `${valid} of 4 ready`;
-      else                  txt.textContent = "You're set ✓";
+      if (valid === 0)        txt.textContent = `Fill in ${total} details to reserve`;
+      else if (valid < total) txt.textContent = `${valid} of ${total} ready`;
+      else                    txt.textContent = "You're set ✓";
     }
-    document.querySelector('.reg-progress')?.classList.toggle('complete', valid === 4);
+    document.querySelector('.reg-progress')?.classList.toggle('complete', valid === total);
   }
   FIELDS.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener('input', () => validateField(id));
-    el.addEventListener('blur',  () => validateField(id));
+    el.addEventListener('input',  () => validateField(id));
+    el.addEventListener('blur',   () => validateField(id));
+    el.addEventListener('change', () => validateField(id));
   });
 
   // whatsapp: live format as 98765 43210
