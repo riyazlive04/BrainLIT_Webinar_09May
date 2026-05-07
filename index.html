@@ -1111,7 +1111,7 @@ src="https://www.facebook.com/tr?id=916385274282188&ev=PageView&noscript=1"
 
   const SUPABASE_URL = 'https://prqznmxexaxsactbpeyn.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_N5TTTltkua6V8bOBad8cHw_rN6S1-xU';
-  const SEATS_TARGET = 100;
+  const SEATS_TARGET = 50;
 
   const sb = (SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('[')) ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
@@ -1144,7 +1144,7 @@ src="https://www.facebook.com/tr?id=916385274282188&ev=PageView&noscript=1"
     if (!sb || !webinarDate) return;
     const { count } = await sb.from('registrations').select('id', { count: 'exact', head: true }).eq('webinar_date', webinarDate.toISOString());
     const left = Math.max(0, SEATS_TARGET - (count || 0));
-    document.getElementById('seats-r').innerHTML = `<span class="pulse"></span><span>Only <strong>${left}</strong> of ${SEATS_TARGET} seats remaining</span>`;
+    document.getElementById('seats-r').innerHTML = `<span class="pulse"></span><span>Only <strong>${left}</strong> seats remaining</span>`;
     document.getElementById('seats-l').textContent = `Only ${left} seats left`;
   }
 
